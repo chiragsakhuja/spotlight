@@ -5,7 +5,7 @@ help() {
     echo ""
     echo "Options:"
     echo "  --comparison  The type of data to compare. Either Main-Edge,"
-    echo "                Main-Cloud, or Ablation."
+    echo "                Main-Cloud, General, or Ablation."
     echo "  -h"
     echo "  --help        Print this message."
     exit
@@ -40,6 +40,9 @@ case $comparison in
         scale="Cloud"
         compare_list=(Spotlight Eyeriss NVDLA MAERI)
         ;;
+    General)
+        scale="Edge"
+        compare_list=(Spotlight Eyeriss NVDLA MAERI Spotlight-Multi Spotlight-General)
     Ablation)
         scale="Edge"
         compare_list=(Spotlight Spotlight-GA Spotlight-R Spotlight-V Spotlight-F)

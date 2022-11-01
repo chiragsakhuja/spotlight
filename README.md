@@ -47,7 +47,9 @@ Open an interactive shell in a new container.
 docker run -it spotlight /bin/bash
 ```
 
-Activate the Anaconda environment and build MAESTRO and its wrapper.
+Within the Docker container, activate the Anaconda environment and build MAESTRO
+and its wrapper.  Spotlight should be run (see the following section) within the
+Docker container as well.
 ```
 conda activate spotlight-ae
 scons -j`nproc`
@@ -56,7 +58,7 @@ scons -j`nproc`
 To resume work in the container after stopping/exiting, run the following
 commands.
 ```
-docker container ls -a   (to get Container ID)
+docker container ls -a                    (to get Container ID)
 docker start <Container ID>
 docker exec -it <Container ID> /bin/bash
 ```
@@ -68,9 +70,9 @@ file for easy comparison.
 
 ## `run-ae.sh`
 There are a few modes that the script can run in: Single, Main-Edge, Main-Cloud,
-and Ablation.
+General, and Ablation.
 
-### Single Mode
+### Single Mode (Runs in minutes)
 This mode runs a single configuration of Spotlight, where a configuration is
 defined as a specific scale, search algorithm, DL model, and optimization target
 (EDP or Delay).  In either case, results are written to the `results` directory.
@@ -84,17 +86,18 @@ Spotlight, run the following command.
 The `--trials` argument is optional and dictates how many independent trials to
 run Spotlight for.  The default is 1.
 
-### Main Modes
+### Main Modes (Runs in multiple days)
 These modes, Main-Edge and Main-Cloud, are intended to reproduce Figures 6 and 7
 in the paper.  They run experiments with Spotlight and the hand-designed
-accelerators.  Because there are so many configurations---4 search algorithms, 5
-DL models, and 2 optimization targets---it can take nearly a day to complete a
-full run, even if only 1 trial of each configuration is used.  Moreover, it is
-more difficult to explore the large cloud-scale space, so a full run at
-cloud-scale can take multiple days to complete.  This mode is parallelized, so
-it is beneficial to have at least 8 cores.
+accelerators.  Because there are so many configurations---4 techniques, 5 DL
+models, and 2 optimization targets, equaling a total of 40 configurations---it
+can take nearly a day to complete a full run, even if only 1 trial of each
+configuration is used.  Moreover, it is more difficult to explore the large
+cloud-scale space, so a full run at cloud-scale can take multiple days to
+complete.  This mode is parallelized, so it is beneficial to have at least 8
+cores available.
 
-To run in both main modes, run the following commands.
+To run both main modes, run the following commands.
 ```
 ./run-ae.sh full-edge [--trials 1]
 ./run-ae.sh full-cloud [--trials 1]
@@ -102,13 +105,32 @@ To run in both main modes, run the following commands.
 
 The `--trials` argument is optional and dictates how many independent trials to
 run Spotlight for.  The default is 1.  It is recommended to keep the trials at 1
-for this mode, though we use 10 for the paper.
+for this mode, though we use 10 for the results in the paper.
 
-### Ablation Mode
+### General Mode (Runs in minutes)
+This mode is similar to the main modes except that it is designed to reproduce
+the data for Figure 9, which demonstrates that Spotlight's accelerators are
+fine-tuned but still generalize well.  Specifically, this mode runs two
+experiments: (1) It uses an accelerator that was fine-tuned to run all 5 DL
+workloads, and (2) It uses an accelerator that was fine-tuned to run VGG16,
+ResNet-50, and MobileNetV2, and it shows that performance is still good when the
+accelerator runs MNasNet and Transformer.
+
+To run general mode, run the following command.
+```
+./run-ae.sh ablation [--trials 1]
+```
+
+The `--trials` argument is optional and dictates how many independent trials to
+run Spotlight for.  The default is 1.
+
+### Ablation Mode (Runs in multiple hours)
 This mode is similar to the main modes except it is designed to reproduce the
 data for Figure 10, which compares the performance of different variants of
 Spotlight.  Specifically, this mode runs Spotlight-GA, Spotlight-R, Spotlight-V,
-and Spotlight-F.
+and Spotlight-F, and it assumes that Spotlight has already been run through a 
+different mode.  This mode will take several hours to complete, and it is also
+parallelized, so it is beneficial to have at least 8 cores available.
 
 To run ablation mode, run the following command.
 ```
@@ -128,7 +150,7 @@ flag.
 
 The script runs as follows, where only one comparison type is selected.
 ```
-./compare-ae.sh --comparison Main-Edge|Main-Cloud|Ablation
+./compare-ae.sh --comparison Main-Edge|Main-Cloud|General|Ablation
 ```
 
 ## Running Spotlight Directly

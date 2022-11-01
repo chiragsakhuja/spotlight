@@ -60,6 +60,18 @@ def run_search(args, out_file):
         hw_templates = {
             'MoRV_delay': "{'num_simd_lane':16,'bit_width':8,'bandwidth':231,'l0_buf_size':122880,'l1_buf_size':98304,'subclusters':[9,32]}",
             'MoRV_edp': "{'num_simd_lane':16,'bit_width':8,'bandwidth':244,'l0_buf_size':237568,'l1_buf_size':122880,'subclusters':[33,9]}",
+            'MoRVMnT_edp': "{'num_simd_lane':16,'bit_width':8,'bandwidth':185,'l0_buf_size':57344,'l1_buf_size':90112,'subclusters':[17,8]}",
+            'MoRVMnT_delay': "{'num_simd_lane':16,'bit_width':8,'bandwidth':128,'l0_buf_size':40960,'l1_buf_size':147456,'subclusters':[5,59]}",
+            'bo_edp_mnasnet': "{'num_simd_lane':16,'bit_width':8,'bandwidth':198,'l0_buf_size':122880,'l1_buf_size':32768,'subclusters':[14,21]}",
+            'bo_edp_resnet': "{'num_simd_lane':16,'bit_width':8,'bandwidth':206,'l0_buf_size':81920,'l1_buf_size':73728,'subclusters':[9,33]}",
+            'bo_edp_vgg': "{'num_simd_lane':16,'bit_width':8,'bandwidth':200,'l0_buf_size':65536,'l1_buf_size':73728,'subclusters':[33,9]}",
+            'bo_edp_mobilenet': "{'num_simd_lane':15,'bit_width':8,'bandwidth':239,'l0_buf_size':139264,'l1_buf_size':32768,'subclusters':[56,5]}",
+            'bo_edp_ztransformer': "{'num_simd_lane':16,'bit_width':8,'bandwidth':99,'l0_buf_size':188416,'l1_buf_size':73728,'subclusters':[299,1]}",
+            'bo_delay_mnasnet': "{'num_simd_lane':16,'bit_width':8,'bandwidth':251,'l0_buf_size':122880,'l1_buf_size':147456,'subclusters':[15,20]}",
+            'bo_delay_resnet': "{'num_simd_lane':16,'bit_width':8,'bandwidth':243,'l0_buf_size':237568,'l1_buf_size':221184,'subclusters':[17,16]}",
+            'bo_delay_vgg': "{'num_simd_lane':16,'bit_width':8,'bandwidth':245,'l0_buf_size':81920,'l1_buf_size':106496,'subclusters':[33,9]}",
+            'bo_delay_mobilenet': "{'num_simd_lane':16,'bit_width':8,'bandwidth':242,'l0_buf_size':106496,'l1_buf_size':81920,'subclusters':[34,7]}",
+            'bo_delay_ztransformer': "{'num_simd_lane':16,'bit_width':8,'bandwidth':185,'l0_buf_size':163840,'l1_buf_size':212992,'subclusters':[3,83]}",
         }
         if args.hw_point in hw_templates:
             hw_point_str = hw_templates[args.hw_point]

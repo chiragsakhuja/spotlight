@@ -6,6 +6,7 @@ help() {
     echo "Modes:"
     echo "  ablation      Run other Spotlight variants on the complete suite of"
     echo "                benchmarks."
+    echo "  general       Run Spotlight in generalized settings."
     echo "  main-edge     Run the complete set of benchmarks for edge-scale."
     echo "  main-cloud    Run the complete set of benchmarks for cloud-scale. Can"
     echo "                take multiple days to complete!"
@@ -60,8 +61,8 @@ run_single() {
     shift
 
     extra_flags=""
-    hw_trials=10
-    sw_trials=10
+    hw_trials=100
+    sw_trials=100
     optimizer_type="hw"
 
     result_dir="results/$scale/$technique/$target/$model"
@@ -80,7 +81,40 @@ run_single() {
             ;;
     esac
 
+    case $model in
+        VGG16|RESNET|MOBILENET|MNASNET|TRANSFORMER)
+            ;;
+        *)
+            echo "Invalid model: $model"
+            help_single
+            ;;
+    esac
+
+    case $target in
+        EDP)
+            real_target="edp"
+            ;;
+        Delay)
+            real_target="delay"
+            ;;
+        *)
+            echo "Invalid target: $target"
+            help_single
+            ;;
+    esac
+
+
     case $technique in
+        Spotlight-Multi)
+            real_technique="bo_hw_sw_search"
+            extra_flags="--hw-point=MoRVMnT_$real_target"
+            optimizer_type="sw"
+            ;;
+        Spotlight-General)
+            real_technique="bo_hw_sw_search"
+            extra_flags="--hw-point=MoRV_$real_target"
+            optimizer_type="sw"
+            ;;
         Spotlight-GA)
             real_technique="ga_hw_sw_search"
             extra_flags="--hw-batch-size=20 --sw-batch-size=20 --scale-trials"
@@ -132,28 +166,6 @@ run_single() {
             ;;
     esac
 
-    case $model in
-        VGG16|RESNET|MOBILENET|MNASNET|TRANSFORMER)
-            ;;
-        *)
-            echo "Invalid model: $model"
-            help_single
-            ;;
-    esac
-
-    case $target in
-        EDP)
-            real_target="edp"
-            ;;
-        Delay)
-            real_target="delay"
-            ;;
-        *)
-            echo "Invalid target: $target"
-            help_single
-            ;;
-    esac
-
     real_progress_bar=""
     if [[ $progress_bar -eq 1 ]]; then
         real_progress_bar="--$optimizer_type-progress-bar"
@@ -169,21 +181,39 @@ fi
 mode=$1
 shift
 
+trials=1
+help=0
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -h|--help)
+            help=1
+            ;;
+        --trials)
+            trials=$2
+            shift
+            ;;
+        *)
+            break
+            ;;
+    esac
+    shift
+done
+
 if [[ $mode == "single" ]]; then
+    if [[ $help -eq 1 ]]; then
+        help_single
+    fi
+
     technique=""
     model=""
     scale=""
     target=""
-    trials=1
 
     while [[ $# -gt 0 ]]; do
         case $1 in
             --technique)
                 technique=$2
                 shift
-                ;;
-            -h|--help)
-                help_single
                 ;;
             --model)
                 model=$2
@@ -211,23 +241,9 @@ if [[ $mode == "single" ]]; then
     run_single $technique $model $target $trials $scale 1 $@
 
 elif [[ $mode == "main-"* ]]; then
-    trials=1
-
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-            -h|--help)
-                help_main $mode
-                ;;
-            --trials)
-                trials=$2
-                shift
-                ;;
-            *)
-                break
-                ;;
-        esac
-        shift
-    done
+    if [[ $help -eq 1 ]]; then
+        help_main $mode
+    fi
 
     scale=""
     if [[ $mode == *"-edge" ]]; then
@@ -246,23 +262,9 @@ elif [[ $mode == "main-"* ]]; then
         wait
     done
 elif [[ $mode == "ablation" ]]; then
-    trials=1
-
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-            -h|--help)
-                help_main $mode
-                ;;
-            --trials)
-                trials=$2
-                shift
-                ;;
-            *)
-                break
-                ;;
-        esac
-        shift
-    done
+    if [[ $help -eq 1 ]]; then
+        help_main $mode
+    fi
 
     for model in VGG16 RESNET MOBILENET MNASNET TRANSFORMER; do
         for target in EDP Delay; do
@@ -273,6 +275,26 @@ elif [[ $mode == "ablation" ]]; then
         done
         wait
     done
+elif [[ $mode == "general" ]]; then
+    if [[ $help -eq 1 ]]; then
+        help_main $mode
+    fi
+
+    for target in EDP Delay; do
+        for model in VGG16 RESNET MOBILENET MNASNET TRANSFORMER; do
+            echo "Spotlight-Multi-$target-$model"
+            run_single "Spotlight-Multi" $model $target $trials "Edge" 0 $@ &
+        done
+        wait
+    done
+
+    for model in MNASNET TRANSFORMER; do
+        for target in EDP Delay; do
+            echo "Spotlight-General-$target-$model"
+            run_single "Spotlight-General" $model $target $trials "Edge" 0 $@ &
+        done
+    done
+    wait
 else
     help
 fi
