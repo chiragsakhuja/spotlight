@@ -32,10 +32,6 @@
 *.out
 *.app
 
-# Excutable
-maestro
-spotlight
-
 # Generated datasets
 *.csv
 !tools/jupyter_notebook/data/*.csv
@@ -52,4 +48,4 @@ spotlight
 *.txt
 
 build/
-release/
+results/
