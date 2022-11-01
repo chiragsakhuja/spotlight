@@ -19,8 +19,6 @@ follows:
 
 # Requirements
 Spotlight can either be built natively or within a provided Docker container.
-Although Docker may be more convenient to set up, we recommend running natively
-because it is significantly faster.
 
 ## Native Setup
 Spotlight requires the following packages to be installed natively:
