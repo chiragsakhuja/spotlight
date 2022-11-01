@@ -1,0 +1,71 @@
+import os
+
+env = Environment()
+
+wrapper = 'maestro-wrapper'
+maestro = os.path.join(wrapper, 'maestro')
+
+spotlight_lib_with_main = False
+debug = False
+
+includes = f'''.
+               ./{maestro}/cost-model/include
+               ./{maestro}/cost-model/include/base
+               ./{maestro}/cost-model/include/tools
+               ./{maestro}/cost-model/include/user-api
+               ./{maestro}/cost-model/include/dataflow-analysis
+               ./{maestro}/cost-model/include/dataflow-specification-language
+               ./{maestro}/cost-model/include/design-space-exploration
+               ./{maestro}/cost-model/include/cost-analysis
+               ./{maestro}/cost-model/include/abstract-hardware-model
+               ./{maestro}/cost-model/src'''
+
+env.Append(LINKFLAGS=[
+    '-lboost_program_options',
+    '-lboost_filesystem',
+    '-lboost_system'
+])
+
+env.Append(CXXFLAGS=[
+    '-std=c++17',
+    '-lboost_program_options',
+    '-lboost_filesystem',
+    '-lboost_system',
+    '-g' if debug else '-O3',
+    '-Wall',
+    '-Wextra'
+])
+
+env.Append(LIBS=[
+    '-lboost_program_options',
+    '-lboost_filesystem',
+    '-lboost_system'
+])
+
+env.Append(CPPPATH = Split(includes))
+env.Program('maestro', [
+    f'{maestro}/maestro-top.cpp',
+    f'{maestro}/cost-model/src/BASE_base-objects.cpp'
+])
+env.Append(LIBS=['-lpthread'])
+env.Append(CXXFLAGS=['-D_SPOTLIGHT'])
+if debug:
+    env.Append(CXXFLAGS=['-D_DEBUG_OUT', '-D_VERBOSE'])
+if spotlight_lib_with_main:
+    env.Append(CXXFLAGS=['-D_WITH_MAIN'])
+    env.Program('spotlight', [
+        f'{wrapper}/spotlight-lib.cpp',
+        f'{wrapper}/spotlight-common.cpp',
+        f'{maestro}/cost-model/src/BASE_base-objects.cpp'
+    ])
+else:
+    env.Program('spotlight', [
+        f'{wrapper}/spotlight-top.cpp',
+        f'{wrapper}/spotlight-common.cpp',
+        f'{maestro}/cost-model/src/BASE_base-objects.cpp'
+    ])
+    env.SharedLibrary('spotlight', [
+        f'{wrapper}/spotlight-lib.cpp',
+        f'{wrapper}/spotlight-common.cpp',
+        f'{maestro}/cost-model/src/BASE_base-objects.cpp'
+    ])
