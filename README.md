@@ -118,7 +118,7 @@ accelerator runs MNasNet and Transformer.
 
 To run general mode, run the following command.
 ```
-./run-ae.sh ablation [--trials 1]
+./run-ae.sh general [--trials 1]
 ```
 
 The `--trials` argument is optional and dictates how many independent trials to
@@ -145,12 +145,11 @@ This script aggregates the results in the `results` directory for easy
 comparison with the figures in the paper.  Specifically, for each configuration,
 this script collects the Minimum, Maximum, and Median performance metrics for
 each configuration.  Furthermore, the script normalizes each configuration to
-Spotlight.  The type of comparison can be specified with the `--comparison`
-flag.
+Spotlight.  The type of comparison is specified directly after the script.
 
 The script runs as follows, where only one comparison type is selected.
 ```
-./compare-ae.sh --comparison Main-Edge|Main-Cloud|General|Ablation
+./compare-ae.sh main-edge|main-cloud|general|ablation
 ```
 
 ## Running Spotlight Directly

@@ -1,25 +1,44 @@
 #!/bin/bash
 
 help() {
-    echo "Usage: $0 --comparison COMP [OPTION]"
+    echo "Usage: $0 MODE [OPTION]"
     echo ""
     echo "Options:"
-    echo "  --comparison  The type of data to compare. Either Main-Edge,"
-    echo "                Main-Cloud, General, or Ablation."
+    echo "  MODE          The type of data to compare. Either main-Edge,"
+    echo "                main-cloud, general, or ablation."
     echo "  -h"
     echo "  --help        Print this message."
     exit
 }
 
 scale=""
-comparison=""
+compare_list=()
+case $1 in
+    main-edge)
+        scale="Edge"
+        compare_list=(Spotlight Eyeriss NVDLA MAERI)
+        ;;
+    main-cloud)
+        scale="Cloud"
+        compare_list=(Spotlight Eyeriss NVDLA MAERI)
+        ;;
+    general)
+        scale="Edge"
+        compare_list=(Spotlight Eyeriss NVDLA MAERI Spotlight-Multi Spotlight-General)
+        ;;
+    ablation)
+        scale="Edge"
+        compare_list=(Spotlight Spotlight-GA Spotlight-R Spotlight-V Spotlight-F)
+        ;;
+    *)
+        echo "Invalid comparison: $1"
+        help
+        ;;
+esac
+shift
 
 while [[ $# -gt 0 ]]; do
     case $1 in
-        --comparison)
-            comparison=$2
-            shift
-            ;;
         -h|--help)
             help
             ;;
@@ -30,28 +49,6 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
-compare_list=()
-case $comparison in
-    Main-Edge)
-        scale="Edge"
-        compare_list=(Spotlight Eyeriss NVDLA MAERI)
-        ;;
-    Main-Cloud)
-        scale="Cloud"
-        compare_list=(Spotlight Eyeriss NVDLA MAERI)
-        ;;
-    General)
-        scale="Edge"
-        compare_list=(Spotlight Eyeriss NVDLA MAERI Spotlight-Multi Spotlight-General)
-    Ablation)
-        scale="Edge"
-        compare_list=(Spotlight Spotlight-GA Spotlight-R Spotlight-V Spotlight-F)
-        ;;
-    *)
-        echo "Invalid comparison: $comparison"
-        help
-        ;;
-esac
 
 echo "Path,Min,Max,Median,Median Normalized to Spotlight"
 
