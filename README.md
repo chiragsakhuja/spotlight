@@ -62,42 +62,74 @@ docker exec -it <Container ID> /bin/bash
 ```
 
 # Running Spotlight
-We provide a script, `run-ae.sh`, that runs the most common configurations, as
-presented in our paper, of Spotlight.  We also provide a script,
-`compare-ae.sh`, that aggregates the results into a CSV file of all runs.
+We provide a script, `run-ae.sh`, that runs the experiments in the paper.  We
+also provide a script, `compare-ae.sh`, that aggregates the results into a CSV
+file for easy comparison.
 
 ## `run-ae.sh`
-There are two modes that the script can run in: Single and Full.
+There are a few modes that the script can run in: Single, Main-Edge, Main-Cloud,
+and Ablation.
 
 ### Single Mode
 This mode runs a single configuration of Spotlight, where a configuration is
-defined as a specific search algorithm, DL model, and optimization target (EDP
-or Delay).  In either case, results are written to the `results` directory.
+defined as a specific scale, search algorithm, DL model, and optimization target
+(EDP or Delay).  In either case, results are written to the `results` directory.
 
-For example, to optimize ResNet-50 for EDP using Spotlight, run the following
-command.
+For example, to optimize ResNet-50 for EDP on an edge-scale accelerator using
+Spotlight, run the following command.
 ```
-./run-ae.sh single --model RESNET --target EDP --algorithm Spotlight [--trials 1]
+./run-ae.sh single --model RESNET --target EDP --technique Spotlight --scale Edge [--trials 1]
 ```
 
 The `--trials` argument is optional and dictates how many independent trials to
 run Spotlight for.  The default is 1.
 
-### Full Mode
-To run the full suite of search algorithms, DL models, and optimization targets,
-run with this mode.  Note that, even when evaluating just 1 trial of each
-configuration, this mode can take a **very long time**.  There are 5 search
-algorithms, 5 DL models, and 2 optimization targets, equaling a total of 50
-configurations, each of which can take multiple hours to complete.  This mode
-does parallelize the runs, but it can still take one or more days to collect all
-results.
+### Main Modes
+These modes, Main-Edge and Main-Cloud, are intended to reproduce Figures 6 and 7
+in the paper.  They run experiments with Spotlight and the hand-designed
+accelerators.  Because there are so many configurations---4 search algorithms, 5
+DL models, and 2 optimization targets---it can take nearly a day to complete a
+full run, even if only 1 trial of each configuration is used.  Moreover, it is
+more difficult to explore the large cloud-scale space, so a full run at
+cloud-scale can take multiple days to complete.  This mode is parallelized, so
+it is beneficial to have at least 8 cores.
 
-To run in full mode, use the following command.
+To run in both main modes, run the following commands.
 ```
-./run-ae.sh full [--trials 1]
+./run-ae.sh full-edge [--trials 1]
+./run-ae.sh full-cloud [--trials 1]
 ```
+
+The `--trials` argument is optional and dictates how many independent trials to
+run Spotlight for.  The default is 1.  It is recommended to keep the trials at 1
+for this mode, though we use 10 for the paper.
+
+### Ablation Mode
+This mode is similar to the main modes except it is designed to reproduce the
+data for Figure 10, which compares the performance of different variants of
+Spotlight.  Specifically, this mode runs Spotlight-GA, Spotlight-R, Spotlight-V,
+and Spotlight-F.
+
+To run ablation mode, run the following command.
+```
+./run-ae.sh ablation [--trials 1]
+```
+
 The `--trials` argument is optional and dictates how many independent trials to
 run Spotlight for.  The default is 1.
+
+## `compare-ae.sh`
+This script aggregates the results in the `results` directory for easy
+comparison with the figures in the paper.  Specifically, for each configuration,
+this script collects the Minimum, Maximum, and Median performance metrics for
+each configuration.  Furthermore, the script normalizes each configuration to
+Spotlight.  The type of comparison can be specified with the `--comparison`
+flag.
+
+The script runs as follows, where only one comparison type is selected.
+```
+./compare-ae.sh --comparison Main-Edge|Main-Cloud|Ablation
+```
 
 ## Running Spotlight Directly
 Spotlight can be run directly through Python.  To see the full suite of command
@@ -105,15 +137,4 @@ line options that Spotlight provides, run the following command from
 SPOTLIGHT_ROOT.
 ```
 python src/main.py --help
-```
-
-## `compare-ae.sh`
-This script aggregates all the results in the `results` directory.
-Specifically, for each configuration, this script collects the Minimum, Maximum,
-and Median performance metrics for each configuration.  Furthermore, the script
-normalizes each configuration to Spotlight.
-
-The script does not take any arguments and can simply be run as follows.
-```
-./compare-ae.sh
 ```

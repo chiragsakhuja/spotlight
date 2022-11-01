@@ -28,7 +28,7 @@ help_main() {
 }
 
 help_single() {
-    echo "Usage: $0 single --model MODEL --target TARGET --technique NAME [OPTION]"
+    echo "Usage: $0 single --model MODEL --target TARGET --technique NAME --scale SCALE [OPTION]"
     echo ""
     echo "Options:"
     echo "  -h"
