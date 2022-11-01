@@ -19,6 +19,8 @@ follows:
 
 # Requirements
 Spotlight can either be built natively or within a provided Docker container.
+Although Docker may be more convenient to set up, we recommend running natively
+because it is significantly faster.
 
 ## Native Setup
 Spotlight requires the following packages to be installed natively:
@@ -28,19 +30,38 @@ Spotlight requires the following packages to be installed natively:
 4. Anaconda
 5. SCons build system
 
-Create an Anaconda environment and activate it.
+Create an Anaconda environment and activate it.  Then build MAESTRO and its
+wrapper.
 ```
 conda env create -f environment.yml
 conda activate spotlight-ae
-```
-
-Build MAESTRO and the MAESTRO wrapper.
-```
 scons -j`nproc`
 ```
 
 ## Docker Setup
-TODO
+Build the Docker image (takes about 20 minutes).
+```
+docker build -t spotlight .
+```
+
+Open an interactive shell in a new container.
+```
+docker run -it spotlight /bin/bash
+```
+
+Activate the Anaconda environment and build MAESTRO and its wrapper.
+```
+conda activate spotlight-ae
+scons -j`nproc`
+```
+
+To resume work in the container after stopping/exiting, run the following
+commands.
+```
+docker container ls -a   (to get Container ID)
+docker start <Container ID>
+docker exec -it <Container ID> /bin/bash
+```
 
 # Running Spotlight
 We provide a script, `run-ae.sh`, that runs the most common configurations, as

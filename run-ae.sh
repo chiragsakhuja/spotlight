@@ -51,8 +51,8 @@ run_single() {
     shift
 
     extra_flags=""
-    hw_trials=10
-    sw_trials=10
+    hw_trials=100
+    sw_trials=100
 
     result_dir="results/$algorithm/$target/$model"
     mkdir -p $result_dir
