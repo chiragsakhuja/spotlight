@@ -72,6 +72,10 @@ def run_search(args, out_file):
             'bo_delay_vgg': "{'num_simd_lane':16,'bit_width':8,'bandwidth':245,'l0_buf_size':81920,'l1_buf_size':106496,'subclusters':[33,9]}",
             'bo_delay_mobilenet': "{'num_simd_lane':16,'bit_width':8,'bandwidth':242,'l0_buf_size':106496,'l1_buf_size':81920,'subclusters':[34,7]}",
             'bo_delay_ztransformer': "{'num_simd_lane':16,'bit_width':8,'bandwidth':185,'l0_buf_size':163840,'l1_buf_size':212992,'subclusters':[3,83]}",
+            'eyeriss_edge': "{'num_simd_lane':1,'bit_width':16,'bandwidth':256,'l0_buf_size':16384,'l1_buf_size':262144,'subclusters':[15,18]}",
+            'eyeriss_cloud': "{'num_simd_lane':1,'bit_width':16,'bandwidth':256,'l0_buf_size':16777216,'l1_buf_size':268435456,'subclusters':[60,72]}",
+            'nvdla_edge': "{'num_simd_lane':1,'bit_width':8,'bandwidth':256,'l0_buf_size':32768,'l1_buf_size':524288,'subclusters':[16,16]}",
+            'nvdla_cloud': "{'num_simd_lane':1,'bit_width':8,'bandwidth':256,'l0_buf_size':1048576,'l1_buf_size':16777216,'subclusters':[120,120]}",
         }
         if args.hw_point in hw_templates:
             hw_point_str = hw_templates[args.hw_point]
@@ -94,7 +98,6 @@ def run_search(args, out_file):
         hw_feats = search_utils.get_hw_point_feats(hw_point, num_levels)
 
         model_results = invoke_sw_optimizer(args, eval_func, shapes, num_levels, hw_point, out_file)
-        print(model_results)
 
         if model_results:
             if args.target == 'edp':

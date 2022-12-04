@@ -15,6 +15,10 @@ help() {
     echo "Options:"
     echo "  -h"
     echo "  --help        Print this message."
+    echo "  --slurm       Whether to submit jobs to SLURM or not. Must specify"
+    echo "                --slurm-queue."
+    echo "  --slurm-queue The SLURM queue to submit to. Required if using SLURM."
+    echo "  --trials      Number of trials to run each algorithm for."
     exit
 }
 
@@ -24,7 +28,6 @@ help_main() {
     echo "Options:"
     echo "  -h"
     echo "  --help        Print this message."
-    echo "  --trials      Number of trials to run each algorithm for."
     exit
 }
 
@@ -42,7 +45,6 @@ help_single() {
     echo "                Spotlight-R, Spotlight-V, Spotlight-F, Eyeriss, NVDLA,"
     echo "                or MAERI."
     echo "  --target      Optimization target. Either EDP or delay."
-    echo "  --trials      Number of trials to run each algorithm for."
     exit
 }
 
@@ -64,6 +66,7 @@ run_single() {
     hw_trials=100
     sw_trials=100
     optimizer_type="hw"
+    runtime_limit="07:59:59"
 
     result_dir="results/$scale/$technique/$target/$model"
     mkdir -p $result_dir
@@ -74,6 +77,7 @@ run_single() {
             ;;
         Cloud)
             real_scale="--space-template=datacenter --max-invalid=1000"
+            runtime_limit="47:59:59"
             ;;
         *)
             echo "Invalid scale: $scale"
@@ -137,19 +141,21 @@ run_single() {
         Eyeriss)
             real_technique="bo_sw_search"
             optimizer_type="sw"
+            runtime_limit="00:59:59"
             if [[ $scale == "Edge" ]]; then
-                extra_flags="--hw-point={'num_simd_lane':1,'bit_width':16,'bandwidth':256,'l0_buf_size':16384,'l1_buf_size':262144,'subclusters':[15,18]}"
+                extra_flags="--hw-point=eyeriss_edge"
             else
-                extra_flags="--hw-point={'num_simd_lane':1,'bit_width':16,'bandwidth':256,'l0_buf_size':16777216,'l1_buf_size':268435456,'subclusters':[60,72]}"
+                extra_flags="--hw-point=eyeriss_cloud"
             fi
             ;;
         NVDLA)
             real_technique="bo_sw_search"
             optimizer_type="sw"
+            runtime_limit="00:59:59"
             if [[ $scale == "Edge" ]]; then
-                extra_flags="--hw-point={'num_simd_lane':1,'bit_width':8,'bandwidth':256,'l0_buf_size':32768,'l1_buf_size':524288,'subclusters':[16,16]}"
+                extra_flags="--hw-point=nvdla_edge"
             else
-                extra_flags="--hw-point={'num_simd_lane':1,'bit_width':8,'bandwidth':256,'l0_buf_size':1048576,'l1_buf_size':16777216,'subclusters':[120,120]}"
+                extra_flags="--hw-point=nvdla_cloud"
             fi
             ;;
         MAERI)
@@ -170,7 +176,27 @@ run_single() {
     if [[ $progress_bar -eq 1 ]]; then
         real_progress_bar="--$optimizer_type-progress-bar"
     fi
-    python src/main.py $real_progress_bar --model=$real_technique --trials=$trials --layers=$model --target=$real_target --hw-trials=$hw_trials --sw-trials=$sw_trials $real_scale $extra_flags $@ > $result_dir/out.txt
+
+    if [[ $slurm == 1 ]]; then
+        key=$scale-$technique-$target-$model
+        read -r -d '' template << EOM
+#!/bin/bash
+#SBATCH -J $key
+#SBATCH -o logs/$key.o%j
+#SBATCH -e logs/$key.e%j
+#SBATCH -p $slurm_queue
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH -t $runtime_limit
+
+python src/main.py $real_progress_bar --model=$real_technique --trials=$trials --layers=$model --target=$real_target --hw-trials=$hw_trials --sw-trials=$sw_trials $real_scale --output-dir=$result_dir --output-filename=out.txt --output-to-file $extra_flags $@
+EOM
+
+        echo "$template" > scripts/$key.sh
+        sbatch scripts/$key.sh
+    else
+        python src/main.py $real_progress_bar --model=$real_technique --trials=$trials --layers=$model --target=$real_target --hw-trials=$hw_trials --sw-trials=$sw_trials $real_scale --output-dir=$result_dir --output-filename=out.txt --output-to-file $extra_flags $@ > /dev/null
+    fi
 }
 
 mode=""
@@ -182,6 +208,8 @@ mode=$1
 shift
 
 trials=1
+slurm=0
+slurm_queue=""
 help=0
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -192,12 +220,26 @@ while [[ $# -gt 0 ]]; do
             trials=$2
             shift
             ;;
+        --slurm)
+            slurm=1
+            ;;
+        --slurm-queue)
+            slurm_queue=$2
+            shift
+            ;;
         *)
             break
             ;;
     esac
     shift
 done
+
+if [[ $slurm == 1 ]]; then
+    if [[ $slurm_queue == "" ]]; then
+        help_single
+    fi
+    mkdir -p logs scripts
+fi
 
 if [[ $mode == "single" ]]; then
     if [[ $help -eq 1 ]]; then
@@ -257,6 +299,9 @@ elif [[ $mode == "main-"* ]]; then
             for technique in Spotlight Eyeriss NVDLA MAERI; do
                 echo "$technique-$target-$model"
                 run_single $technique $model $target $trials $scale 0 $@ &
+                if [[ $slurm == 1 ]]; then
+                    wait
+                fi
             done
         done
         wait
@@ -271,6 +316,9 @@ elif [[ $mode == "ablation" ]]; then
             for technique in Spotlight-GA Spotlight-R Spotlight-V Spotlight-F; do
                 echo "$technique-$target-$model"
                 run_single $technique $model $target $trials "Edge" 0 $@ &
+                if [[ $slurm == 1 ]]; then
+                    wait
+                fi
             done
         done
         wait
@@ -284,6 +332,9 @@ elif [[ $mode == "general" ]]; then
         for model in VGG16 RESNET MOBILENET MNASNET TRANSFORMER; do
             echo "Spotlight-Multi-$target-$model"
             run_single "Spotlight-Multi" $model $target $trials "Edge" 0 $@ &
+            if [[ $slurm == 1 ]]; then
+                wait
+            fi
         done
         wait
     done
@@ -292,6 +343,9 @@ elif [[ $mode == "general" ]]; then
         for target in EDP Delay; do
             echo "Spotlight-General-$target-$model"
             run_single "Spotlight-General" $model $target $trials "Edge" 0 $@ &
+            if [[ $slurm == 1 ]]; then
+                wait
+            fi
         done
     done
     wait

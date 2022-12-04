@@ -4,7 +4,7 @@ help() {
     echo "Usage: $0 MODE [OPTION]"
     echo ""
     echo "Options:"
-    echo "  MODE          The type of data to compare. Either main-Edge,"
+    echo "  MODE          The type of data to compare. Either main-edge,"
     echo "                main-cloud, general, or ablation."
     echo "  -h"
     echo "  --help        Print this message."
