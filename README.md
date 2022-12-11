@@ -99,8 +99,8 @@ cores available.
 
 To run both main modes, run the following commands.
 ```
-./run-ae.sh full-edge [--trials 1]
-./run-ae.sh full-cloud [--trials 1]
+./run-ae.sh main-edge [--trials 1]
+./run-ae.sh main-cloud [--trials 1]
 ```
 
 The `--trials` argument is optional and dictates how many independent trials to
